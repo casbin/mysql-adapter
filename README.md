@@ -19,7 +19,7 @@ import (
 
 func main() {
 	// Initialize a MySQL adapter and use it in a Casbin enforcer:
-	a := mysqladapter.NewDBAdapter("mysql", "root:@tcp(127.0.0.1:3306)/") // Your MySQL driver and data source. 
+	a := mysqladapter.NewDBAdapter("mysql", "mysql_username:mysql_password@tcp(127.0.0.1:3306)/") // Your MySQL driver and data source. 
 	e := casbin.NewEnforcer("examples/rbac_model.conf", a)
 	
 	// Load the policy from DB.
