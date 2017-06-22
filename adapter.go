@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysql_adapter
+package mysqladapter
 
 import (
 	"database/sql"
@@ -98,7 +98,7 @@ func loadPolicyLine(line string, model model.Model) {
 }
 
 // LoadPolicy loads policy from database.
-func (a *DBAdapter) LoadPolicy(model model.Model) {
+func (a *DBAdapter) LoadPolicy(model model.Model) error {
 	a.open()
 	defer a.close()
 
@@ -112,13 +112,13 @@ func (a *DBAdapter) LoadPolicy(model model.Model) {
 
 	rows, err := a.db.Query("select * from policy")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&ptype, &v1, &v2, &v3, &v4)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		line := ptype
@@ -140,11 +140,12 @@ func (a *DBAdapter) LoadPolicy(model model.Model) {
 	}
 	err = rows.Err()
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
-func (a *DBAdapter) writeTableLine(stm *sql.Stmt, ptype string, rule []string) {
+func (a *DBAdapter) writeTableLine(stm *sql.Stmt, ptype string, rule []string) error {
 	params := make([]interface{}, 0, 5)
 	params = append(params, ptype)
 	for _, v := range rule {
@@ -155,12 +156,13 @@ func (a *DBAdapter) writeTableLine(stm *sql.Stmt, ptype string, rule []string) {
 		params = append(params, "")
 	}
 	if _, err := stm.Exec(params...); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
 // SavePolicy saves policy to database.
-func (a *DBAdapter) SavePolicy(model model.Model) {
+func (a *DBAdapter) SavePolicy(model model.Model) error {
 	a.open()
 	defer a.close()
 
@@ -169,19 +171,24 @@ func (a *DBAdapter) SavePolicy(model model.Model) {
 
 	stm, err := a.db.Prepare("insert into policy values(?, ?, ?, ?, ?)")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer stm.Close()
 
 	for ptype, ast := range model["p"] {
 		for _, rule := range ast.Policy {
-			a.writeTableLine(stm, ptype, rule)
+			if err = a.writeTableLine(stm, ptype, rule); err != nil {
+				return err
+			}
 		}
 	}
 
 	for ptype, ast := range model["g"] {
 		for _, rule := range ast.Policy {
-			a.writeTableLine(stm, ptype, rule)
+			if err = a.writeTableLine(stm, ptype, rule); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
