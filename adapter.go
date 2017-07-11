@@ -22,23 +22,22 @@ import (
 	_ "github.com/go-sql-driver/mysql" // This is for MySQL initialization.
 )
 
-// DBAdapter represents the database adapter for policy persistence, can load policy from database or save policy to database.
-// For now, only MySQL is tested, but it should work for other RDBMS.
-type DBAdapter struct {
+// Adapter represents the MySQL adapter for policy storage.
+type Adapter struct {
 	driverName     string
 	dataSourceName string
 	db             *sql.DB
 }
 
-// NewDBAdapter is the constructor for DBAdapter.
-func NewDBAdapter(driverName string, dataSourceName string) *DBAdapter {
-	a := DBAdapter{}
+// NewAdapter is the constructor for Adapter.
+func NewAdapter(driverName string, dataSourceName string) *Adapter {
+	a := Adapter{}
 	a.driverName = driverName
 	a.dataSourceName = dataSourceName
 	return &a
 }
 
-func (a *DBAdapter) createDatabase() error {
+func (a *Adapter) createDatabase() error {
 	db, err := sql.Open(a.driverName, a.dataSourceName)
 	if err != nil {
 		return err
@@ -52,7 +51,7 @@ func (a *DBAdapter) createDatabase() error {
 	return nil
 }
 
-func (a *DBAdapter) open() {
+func (a *Adapter) open() {
 	if err := a.createDatabase(); err != nil {
 		panic(err)
 	}
@@ -67,18 +66,18 @@ func (a *DBAdapter) open() {
 	a.createTable()
 }
 
-func (a *DBAdapter) close() {
+func (a *Adapter) close() {
 	a.db.Close()
 }
 
-func (a *DBAdapter) createTable() {
+func (a *Adapter) createTable() {
 	_, err := a.db.Exec("CREATE table IF NOT EXISTS policy (ptype VARCHAR(10), v1 VARCHAR(256), v2 VARCHAR(256), v3 VARCHAR(256), v4 VARCHAR(256))")
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (a *DBAdapter) dropTable() {
+func (a *Adapter) dropTable() {
 	_, err := a.db.Exec("DROP table policy")
 	if err != nil {
 		panic(err)
@@ -98,7 +97,7 @@ func loadPolicyLine(line string, model model.Model) {
 }
 
 // LoadPolicy loads policy from database.
-func (a *DBAdapter) LoadPolicy(model model.Model) error {
+func (a *Adapter) LoadPolicy(model model.Model) error {
 	a.open()
 	defer a.close()
 
@@ -145,7 +144,7 @@ func (a *DBAdapter) LoadPolicy(model model.Model) error {
 	return nil
 }
 
-func (a *DBAdapter) writeTableLine(stm *sql.Stmt, ptype string, rule []string) error {
+func (a *Adapter) writeTableLine(stm *sql.Stmt, ptype string, rule []string) error {
 	params := make([]interface{}, 0, 5)
 	params = append(params, ptype)
 	for _, v := range rule {
@@ -162,7 +161,7 @@ func (a *DBAdapter) writeTableLine(stm *sql.Stmt, ptype string, rule []string) e
 }
 
 // SavePolicy saves policy to database.
-func (a *DBAdapter) SavePolicy(model model.Model) error {
+func (a *Adapter) SavePolicy(model model.Model) error {
 	a.open()
 	defer a.close()
 
