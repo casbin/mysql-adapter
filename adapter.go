@@ -45,10 +45,7 @@ func (a *Adapter) createDatabase() error {
 	defer db.Close()
 
 	_, err = db.Exec("CREATE DATABASE IF NOT EXISTS casbin")
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (a *Adapter) open() {
@@ -138,10 +135,7 @@ func (a *Adapter) LoadPolicy(model model.Model) error {
 		// log.Println(ptype, v1, v2, v3, v4)
 	}
 	err = rows.Err()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (a *Adapter) writeTableLine(stm *sql.Stmt, ptype string, rule []string) error {
